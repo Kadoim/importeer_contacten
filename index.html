@@ -120,7 +120,7 @@ body.receiving .creator-only { display: none !important; }
 </head>
 <body>
   <main class="shell">
-    <header class="topbar"><div class="mark">W</div><div><h1>WhatsApp Business-hulpmiddelen</h1><p class="subtitle">Importeer een lijst cursisten of maak een QR-code naar je WhatsApp-nummer.</p></div></header>
+    <header class="topbar"><div class="mark">W</div><div><h1>WhatsApp Business-hulpmiddelen</h1><p class="subtitle">Importeer een lijst cursisten of maak een QR-code van je WhatsApp-nummer.</p></div></header>
     <nav class="tabs creator-only" role="tablist" aria-label="Kies een hulpmiddel">
       <button id="contactsTabBtn" class="tab active" role="tab" aria-selected="true" aria-controls="contactsTab" data-tab="contacts">Cursisten naar contacten</button>
       <button id="waTabBtn" class="tab" role="tab" aria-selected="false" aria-controls="waTab" data-tab="wa">QR-code van WhatsApp-nummer</button>
@@ -175,7 +175,7 @@ body.receiving .creator-only { display: none !important; }
 
     <section id="waTab" class="panel wa-tool creator-only" role="tabpanel" aria-labelledby="waTabBtn" hidden>
       <div class="wa-form">
-        <h2>QR-code naar je WhatsApp-nummer</h2>
+        <h2>QR-code van je WhatsApp-nummer</h2>
         <p>Vul het telefoonnummer in waarop je via WhatsApp bereikbaar bent. Een Belgisch nummer mag gewoon met <strong>04</strong> beginnen.</p>
         <div class="field">
           <label for="waNumber">WhatsApp-nummer</label>
@@ -186,7 +186,7 @@ body.receiving .creator-only { display: none !important; }
         <p class="privacy"><span>🔒</span><span>Het nummer wordt alleen in deze browser verwerkt en nergens opgeslagen.</span></p>
       </div>
       <div id="waResult" class="wa-result" hidden>
-        <div id="waQrCode" class="qr-code" aria-label="QR-code naar WhatsApp"></div>
+        <div id="waQrCode" class="qr-code" aria-label="QR-code van WhatsApp"></div>
         <p>Wie deze code scant, opent een WhatsApp-chat naar dit nummer.</p>
         <a id="waLink" class="wa-link" target="_blank" rel="noopener">Link testen</a>
       </div>
