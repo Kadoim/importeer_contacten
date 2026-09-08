@@ -1657,11 +1657,11 @@ async function gunzipText(bytes) {
   return new TextDecoder().decode(await new Response(stream).arrayBuffer());
 }
 function randomTransferCode() {
-  const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const alphabet = "23456789abcdefghjkmnpqrstuvwxyz";
   const random = crypto.getRandomValues(new Uint8Array(8));
   return Array.from(random, n => alphabet[n % alphabet.length]).join("");
 }
-function normalizeTransferCode(value) { return String(value || "").toUpperCase().replace(/[^2-9A-HJ-NP-Z]/g, "").slice(0, 8); }
+	  function normalizeTransferCode(value) { return String(value || "").toUpperCase().replace(/[^2-9A-HJ-NP-Z]/g, "").slice(0, 8); }
 async function deriveTransferKey(code, salt, usages) {
   const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(code), "PBKDF2", false, ["deriveKey"]);
   return crypto.subtle.deriveKey({ name: "PBKDF2", hash: "SHA-256", salt, iterations: 250000 }, material, { name: "AES-GCM", length: 256 }, false, usages);
