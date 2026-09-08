@@ -99,7 +99,7 @@ input[type="checkbox"] { width: 19px; height: 19px; accent-color: var(--brand); 
 .wa-link { color: var(--brand-dark); font-weight: 750; word-break: break-all; }
 .unlock-box { display: grid; gap: 10px; margin: 22px auto 8px; max-width: 340px; }
 .unlock-box label { font-weight: 750; }
-.unlock-box input { width: 100%; min-height: 50px; border: 1px solid #b9c4cf; border-radius: 10px; padding: 10px 12px; text-align: center; text-transform: uppercase; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 1.25rem; letter-spacing: .12em; }
+.unlock-box input { width: 100%; min-height: 50px; border: 1px solid #b9c4cf; border-radius: 10px; padding: 10px 12px; text-align: center; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 1.25rem; letter-spacing: .12em; }
 .unlock-error { min-height: 1.4em; margin: 0 !important; color: var(--danger) !important; font-size: .9rem; }
 body.receiving .creator-only { display: none !important; }
 @media (max-width: 800px) {
@@ -137,7 +137,7 @@ body.receiving .creator-only { display: none !important; }
           <label>2. Wat komt vóór de naam?</label>
           <label class="radio-line"><input type="radio" name="prefixMode" value="course" checked> Cursusnummer: <strong id="courseLabel">wordt uit Excel gelezen</strong></label>
           <label class="radio-line"><input type="radio" name="prefixMode" value="custom"> Zelfgekozen korte naam</label>
-          <input id="customPrefix" class="custom-prefix" placeholder="Bijvoorbeeld MA2 of Alfa 1">
+          <input id="customPrefix" class="custom-prefix" placeholder="Bijvoorbeeld WS1 av of TLS2">
         </div>
         <div class="field"><label for="separator">Scheiding in contactnaam</label><input id="separator" value=" – " maxlength="8"></div>
         <div class="privacy"><span>🔒</span><span>De Excelgegevens worden in deze browser verwerkt. Bij overdracht via QR worden de contactgegevens eerst versleuteld en niet op GitHub opgeslagen.</span></div>
@@ -196,7 +196,7 @@ body.receiving .creator-only { display: none !important; }
       <div class="receiver-icon">✓</div>
       <h2>Beveiligde contacten ontvangen</h2>
       <p id="receiverSummary"></p>
-      <div id="unlockBox" class="unlock-box"><label for="unlockCode">Overdrachtscode van de computer</label><input id="unlockCode" inputmode="text" autocomplete="one-time-code" autocapitalize="characters" maxlength="8" placeholder="Bijvoorbeeld 7K4M9P2R"><button id="unlockBtn" class="primary">Contacten ontsleutelen</button><p id="unlockError" class="unlock-error"></p></div>
+      <div id="unlockBox" class="unlock-box"><label for="unlockCode">Overdrachtscode van de computer</label><input id="unlockCode" inputmode="text" autocomplete="one-time-code" autocapitalize="none" maxlength="8" placeholder="Bijvoorbeeld 7k4m9pr2"><button id="unlockBtn" class="primary">Contacten ontsleutelen</button><p id="unlockError" class="unlock-error"></p></div>
       <button id="phoneOpenBtn" class="primary" hidden>Contactbestand downloaden</button>
       <p id="receiverHelp" class="receiver-help">Tik op de downloadknop. Open daarna het bestand en kies Contacten of Google Contacten.</p>
     </section>
@@ -1845,7 +1845,13 @@ waCreateBtn.addEventListener("click", createWhatsAppQr);
 waNumberInput.addEventListener("keydown", event => { if (event.key === "Enter") createWhatsAppQr(); });
 waNumberInput.addEventListener("input", () => { waStatus.textContent = ""; });
 
-unlockCodeInput.addEventListener("input", () => { unlockCodeInput.value = normalizeTransferCode(unlockCodeInput.value); unlockError.textContent = ""; });
+unlockCodeInput.addEventListener("input", () => {
+  unlockCodeInput.value = unlockCodeInput.value
+    .replace(/[^2-9A-HJ-NP-Za-hj-np-z]/g, "")
+    .slice(0, 8);
+
+  unlockError.textContent = "";
+});
 unlockCodeInput.addEventListener("keydown", e => { if (e.key === "Enter") unlockBtn.click(); });
 unlockBtn.addEventListener("click", async () => {
   const code = normalizeTransferCode(unlockCodeInput.value);
