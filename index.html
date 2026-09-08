@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob:; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cursisten naar WhatsApp Business</title>
+  <title>WhatsApp Business-hulpmiddelen</title>
   <style>:root {
   --ink: #18222f;
   --muted: #637083;
@@ -26,6 +26,9 @@ button, input { font: inherit; }
 .mark { width: 50px; height: 50px; border-radius: 16px; display: grid; place-items: center; background: var(--brand); color: white; font-size: 25px; font-weight: 800; box-shadow: 0 8px 24px #087f5b35; }
 h1 { font-size: clamp(1.55rem, 4vw, 2.25rem); margin: 0 0 3px; letter-spacing: -.035em; }
 .subtitle { margin: 0; color: var(--muted); }
+.tabs { display: flex; gap: 8px; margin-bottom: 18px; padding: 5px; width: fit-content; max-width: 100%; border: 1px solid var(--line); border-radius: 13px; background: #e9eef1; }
+.tab { min-height: 40px; background: transparent; color: #405064; }
+.tab.active { background: white; color: var(--brand-dark); box-shadow: 0 2px 8px #1f29371a; }
 .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 8px 30px #1f29370d; overflow: hidden; }
 .setup { padding: 22px; display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 16px; align-items: end; }
 .field label, .drop-label { display: block; font-size: .9rem; font-weight: 750; margin-bottom: 7px; }
@@ -83,6 +86,17 @@ input[type="checkbox"] { width: 19px; height: 19px; accent-color: var(--brand); 
 .receiver p { color: var(--muted); line-height: 1.5; }
 .receiver .primary { margin: 10px 0; }
 .receiver-help { font-size: .9rem; }
+.wa-tool { padding: 24px; display: grid; grid-template-columns: minmax(280px, 1fr) auto; gap: 34px; align-items: center; }
+.wa-tool[hidden] { display: none; }
+.wa-form { max-width: 560px; }
+.wa-form h2 { margin: 0 0 8px; }
+.wa-form > p { color: var(--muted); line-height: 1.55; }
+.wa-form .field { max-width: 420px; margin: 20px 0 12px; }
+.wa-status { min-height: 1.5em; margin: 10px 0 0; color: var(--danger) !important; }
+.wa-result { text-align: center; max-width: 340px; }
+.wa-result[hidden] { display: none; }
+.wa-result p { color: var(--muted); line-height: 1.45; }
+.wa-link { color: var(--brand-dark); font-weight: 750; word-break: break-all; }
 .unlock-box { display: grid; gap: 10px; margin: 22px auto 8px; max-width: 340px; }
 .unlock-box label { font-weight: 750; }
 .unlock-box input { width: 100%; min-height: 50px; border: 1px solid #b9c4cf; border-radius: 10px; padding: 10px 12px; text-align: center; text-transform: uppercase; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 1.25rem; letter-spacing: .12em; }
@@ -96,13 +110,23 @@ body.receiving .creator-only { display: none !important; }
   .stats { width: 100%; }
   .toolbar button { flex: 1; }
   .qr-panel { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .tabs { width: 100%; }
+  .tab { flex: 1; }
+  .wa-tool { grid-template-columns: 1fr; padding: 18px; }
+  .wa-result { margin: 0 auto; }
 }
 @media print { .setup, .toolbar button, .help { display: none !important; } .shell { width: 100%; margin: 0; } .panel { box-shadow: none; } .table-wrap { max-height: none; overflow: visible; } th { position: static; } }
 </style>
 </head>
 <body>
   <main class="shell">
-    <header class="topbar"><div class="mark">W</div><div><h1>Cursisten naar contacten</h1><p class="subtitle">Maak van een cursistenexport één contactbestand voor WhatsApp Business.</p></div></header>
+    <header class="topbar"><div class="mark">W</div><div><h1>WhatsApp Business-hulpmiddelen</h1><p class="subtitle">Maak een contactbestand of een QR-code naar je WhatsApp-nummer.</p></div></header>
+    <nav class="tabs creator-only" role="tablist" aria-label="Kies een hulpmiddel">
+      <button id="contactsTabBtn" class="tab active" role="tab" aria-selected="true" aria-controls="contactsTab" data-tab="contacts">Cursisten naar contacten</button>
+      <button id="waTabBtn" class="tab" role="tab" aria-selected="false" aria-controls="waTab" data-tab="wa">QR-code naar WhatsApp</button>
+    </nav>
+
+    <div id="contactsTab" class="creator-only" role="tabpanel" aria-labelledby="contactsTabBtn">
     <section class="panel creator-only">
       <div class="setup">
         <div>
@@ -142,6 +166,32 @@ body.receiving .creator-only { display: none !important; }
       <div id="qrCode" class="qr-code" aria-label="QR-code met contactgegevens"></div>
     </section>
 
+    <section class="panel help creator-only">
+      <h2>Daarna op de telefoon</h2>
+      <ol><li>Open het gedownloade <strong>.vcf-bestand</strong> en importeer de contacten.</li><li>Open <strong>WhatsApp Business</strong> en kies <strong>Nieuwe verzendlijst</strong>.</li><li>Zoek op de groepsnaam, tik de juiste cursisten aan en geef de verzendlijst een naam.</li></ol>
+    </section>
+
+    </div>
+
+    <section id="waTab" class="panel wa-tool creator-only" role="tabpanel" aria-labelledby="waTabBtn" hidden>
+      <div class="wa-form">
+        <h2>QR-code naar je WhatsApp-nummer</h2>
+        <p>Vul het telefoonnummer in waarop je via WhatsApp bereikbaar bent. Een Belgisch nummer mag gewoon met <strong>04</strong> beginnen.</p>
+        <div class="field">
+          <label for="waNumber">WhatsApp-nummer</label>
+          <input id="waNumber" type="tel" inputmode="tel" autocomplete="tel" placeholder="Bijvoorbeeld 0471 12 34 56">
+        </div>
+        <button id="waCreateBtn" class="primary">QR-code maken</button>
+        <p id="waStatus" class="wa-status" aria-live="polite"></p>
+        <p class="privacy"><span>🔒</span><span>Het nummer wordt alleen in deze browser verwerkt en nergens opgeslagen.</span></p>
+      </div>
+      <div id="waResult" class="wa-result" hidden>
+        <div id="waQrCode" class="qr-code" aria-label="QR-code naar WhatsApp"></div>
+        <p>Wie deze code scant, opent een WhatsApp-chat naar dit nummer.</p>
+        <a id="waLink" class="wa-link" target="_blank" rel="noopener">Link testen</a>
+      </div>
+    </section>
+
     <section id="receiver" class="panel receiver" hidden>
       <div class="receiver-icon">✓</div>
       <h2>Beveiligde contacten ontvangen</h2>
@@ -151,10 +201,6 @@ body.receiving .creator-only { display: none !important; }
       <p id="receiverHelp" class="receiver-help">Tik op de downloadknop. Open daarna het bestand en kies Contacten of Google Contacten.</p>
     </section>
 
-    <section class="panel help creator-only">
-      <h2>Daarna op de telefoon</h2>
-      <ol><li>Open het gedownloade <strong>.vcf-bestand</strong> en importeer de contacten.</li><li>Open <strong>WhatsApp Business</strong> en kies <strong>Nieuwe verzendlijst</strong>.</li><li>Zoek op de groepsnaam, tik de juiste cursisten aan en geef de verzendlijst een naam.</li></ol>
-    </section>
   </main>
   <script>/*!
 
@@ -1539,6 +1585,12 @@ const unlockBox = document.querySelector("#unlockBox");
 const unlockCodeInput = document.querySelector("#unlockCode");
 const unlockBtn = document.querySelector("#unlockBtn");
 const unlockError = document.querySelector("#unlockError");
+const waNumberInput = document.querySelector("#waNumber");
+const waCreateBtn = document.querySelector("#waCreateBtn");
+const waStatus = document.querySelector("#waStatus");
+const waResult = document.querySelector("#waResult");
+const waQrCode = document.querySelector("#waQrCode");
+const waLink = document.querySelector("#waLink");
 let contacts = [];
 let detectedCourse = "";
 let receivedPayload = null;
@@ -1628,15 +1680,16 @@ async function decryptTransfer(serialized, code) {
   const key = await deriveTransferKey(code, salt, ["decrypt"]);
   return new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher));
 }
-function renderQr(url) {
+function renderQrInto(target, url) {
   const qr = new QRCode(0, QRErrorCorrectLevel.M);
   qr.addData(url); qr.make();
   const count = qr.getModuleCount(), margin = 4;
   let path = "";
   for (let row = 0; row < count; row++) for (let col = 0; col < count; col++) if (qr.isDark(row, col)) path += `M${col + margin} ${row + margin}h1v1h-1z`;
   const size = count + margin * 2;
-  qrCode.innerHTML = `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="Scanbare QR-code"><rect width="${size}" height="${size}" fill="#fff"/><path d="${path}" fill="#111827"/></svg>`;
+  target.innerHTML = `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="Scanbare QR-code"><rect width="${size}" height="${size}" fill="#fff"/><path d="${path}" fill="#111827"/></svg>`;
 }
+function renderQr(url) { renderQrInto(qrCode, url); }
 function updateStats() {
   const selected = contacts.filter(c => c.selected && c.valid && c.contactName.trim()).length;
   const invalid = contacts.filter(c => !c.valid || !c.contactName.trim()).length;
@@ -1760,6 +1813,37 @@ phoneOpenBtn.addEventListener("click", () => {
   const filename = downloadVcf(items, receivedPayload.p);
   receiverHelp.textContent = `${filename} is gedownload. Open het via de downloads van je browser en kies Contacten of Google Contacten.`;
 });
+
+document.querySelectorAll(".tab[data-tab]").forEach(button => button.addEventListener("click", () => {
+  const showWhatsApp = button.dataset.tab === "wa";
+  document.querySelector("#contactsTab").hidden = showWhatsApp;
+  document.querySelector("#waTab").hidden = !showWhatsApp;
+  document.querySelectorAll(".tab[data-tab]").forEach(tab => {
+    const active = tab === button;
+    tab.classList.toggle("active", active);
+    tab.setAttribute("aria-selected", String(active));
+  });
+  if (showWhatsApp) setTimeout(() => waNumberInput.focus(), 0);
+}));
+
+function createWhatsAppQr() {
+  const normalized = core.normalizePhone(waNumberInput.value);
+  if (!normalized.valid) {
+    waResult.hidden = true;
+    waStatus.textContent = normalized.message || "Controleer het telefoonnummer.";
+    return;
+  }
+  const digits = normalized.value.replace(/\D/g, "");
+  const url = `https://wa.me/${digits}`;
+  renderQrInto(waQrCode, url);
+  waLink.href = url;
+  waLink.textContent = url;
+  waStatus.textContent = "";
+  waResult.hidden = false;
+}
+waCreateBtn.addEventListener("click", createWhatsAppQr);
+waNumberInput.addEventListener("keydown", event => { if (event.key === "Enter") createWhatsAppQr(); });
+waNumberInput.addEventListener("input", () => { waStatus.textContent = ""; });
 
 unlockCodeInput.addEventListener("input", () => { unlockCodeInput.value = normalizeTransferCode(unlockCodeInput.value); unlockError.textContent = ""; });
 unlockCodeInput.addEventListener("keydown", e => { if (e.key === "Enter") unlockBtn.click(); });
