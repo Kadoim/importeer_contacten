@@ -20,7 +20,7 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
-button, input { font: inherit; }
+button, input, textarea { font: inherit; }
 .shell { width: min(1180px, calc(100% - 32px)); margin: 28px auto 56px; }
 .topbar { display: flex; gap: 18px; align-items: center; margin-bottom: 22px; }
 .mark { width: 50px; height: 50px; border-radius: 16px; display: grid; place-items: center; background: var(--brand); color: white; font-size: 25px; font-weight: 800; box-shadow: 0 8px 24px #087f5b35; }
@@ -42,6 +42,12 @@ h1 { font-size: clamp(1.55rem, 4vw, 2.25rem); margin: 0 0 3px; letter-spacing: -
 .drop:hover, .drop.drag { border-color: var(--brand); background: #f0faf6; }
 .drop input { display: none; }
 .drop strong { color: var(--brand-dark); }
+.source-divider { display: flex; align-items: center; gap: 10px; margin: 10px 0; color: var(--muted); font-size: .82rem; }
+.source-divider::before, .source-divider::after { content: ""; height: 1px; flex: 1; background: var(--line); }
+.paste-label { display: block; font-size: .86rem; font-weight: 700; margin-bottom: 6px; }
+#pasteData { display: block; width: 100%; resize: vertical; min-height: 88px; border: 1px solid #bec8d3; border-radius: 10px; padding: 10px 12px; color: var(--ink); line-height: 1.35; }
+#pasteData:focus { outline: 3px solid #13a87a26; border-color: var(--brand); }
+.paste-btn { width: 100%; margin-top: 8px; }
 .privacy { grid-column: 1 / -1; color: var(--muted); font-size: .88rem; display: flex; gap: 8px; align-items: center; }
 .status { margin: 0 22px 20px; padding: 12px 14px; border-radius: 10px; background: #f2f5f7; color: #445164; }
 .status:empty { display: none; }
@@ -120,27 +126,31 @@ body.receiving .creator-only { display: none !important; }
 </head>
 <body>
   <main class="shell">
-    <header class="topbar"><div class="mark">W</div><div><h1>WhatsApp Business-hulpmiddelen</h1><p class="subtitle">Importeer een lijst cursisten of maak een QR-code van je WhatsApp-nummer.</p></div></header>
+    <header class="topbar"><div class="mark">W</div><div><h1>WhatsApp Business-hulpmiddelen</h1><p class="subtitle">Maak een contactbestand of een QR-code naar je WhatsApp-nummer.</p></div></header>
     <nav class="tabs creator-only" role="tablist" aria-label="Kies een hulpmiddel">
       <button id="contactsTabBtn" class="tab active" role="tab" aria-selected="true" aria-controls="contactsTab" data-tab="contacts">Cursisten naar contacten</button>
-      <button id="waTabBtn" class="tab" role="tab" aria-selected="false" aria-controls="waTab" data-tab="wa">QR-code van WhatsApp-nummer</button>
+      <button id="waTabBtn" class="tab" role="tab" aria-selected="false" aria-controls="waTab" data-tab="wa">QR-code naar WhatsApp</button>
     </nav>
 
     <div id="contactsTab" class="creator-only" role="tabpanel" aria-labelledby="contactsTabBtn">
     <section class="panel creator-only">
       <div class="setup">
-        <div>
-          <span class="drop-label">1. Kies de Excel-export</span>
+        <div class="source-field">
+          <span class="drop-label">1. Voeg de cursistenlijst toe</span>
           <label class="drop" id="drop"><span><strong>Klik om een Excelbestand te kiezen</strong><br>of sleep het bestand hierheen</span><input id="excelFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+          <div class="source-divider"><span>of</span></div>
+          <label class="paste-label" for="pasteData">Kopieer de tabel in Novigo en plak ze hier</label>
+          <textarea id="pasteData" rows="5" placeholder="Klik hier en druk op Ctrl+V"></textarea>
+          <button id="pasteBtn" class="secondary paste-btn">Geplakte lijst inlezen</button>
         </div>
         <div class="field prefix-field">
           <label>2. Wat komt vóór de naam?</label>
           <label class="radio-line"><input type="radio" name="prefixMode" value="course" checked> Cursusnummer: <strong id="courseLabel">wordt uit Excel gelezen</strong></label>
           <label class="radio-line"><input type="radio" name="prefixMode" value="custom"> Zelfgekozen korte naam</label>
-          <input id="customPrefix" class="custom-prefix" placeholder="Bijvoorbeeld WS1 av of TLS2">
+          <input id="customPrefix" class="custom-prefix" placeholder="Bijvoorbeeld MA2 of Alfa 1">
         </div>
         <div class="field"><label for="separator">Scheiding in contactnaam</label><input id="separator" value=" – " maxlength="8"></div>
-        <div class="privacy"><span>🔒</span><span>De Excelgegevens worden in deze browser verwerkt. Bij overdracht via QR worden de contactgegevens eerst versleuteld en niet op GitHub opgeslagen.</span></div>
+        <div class="privacy"><span>🔒</span><span>Alleen naam en telefoonnummer worden gebruikt; rijksregisternummers, adressen en andere velden worden genegeerd. Bij overdracht via QR worden de contactgegevens versleuteld en niet op GitHub opgeslagen.</span></div>
       </div>
       <p id="status" class="status"></p>
     </section>
@@ -155,7 +165,7 @@ body.receiving .creator-only { display: none !important; }
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th class="select-cell"><input id="selectAll" type="checkbox" aria-label="Alles selecteren"></th><th>Cursist uit Excel</th><th>Naam in contacten — aanpasbaar</th><th>Telefoonnummer</th></tr></thead>
+          <thead><tr><th class="select-cell"><input id="selectAll" type="checkbox" aria-label="Alles selecteren"></th><th>Cursist uit lijst</th><th>Naam in contacten — aanpasbaar</th><th>Telefoonnummer</th></tr></thead>
           <tbody id="contactsBody"></tbody>
         </table>
       </div>
@@ -175,7 +185,7 @@ body.receiving .creator-only { display: none !important; }
 
     <section id="waTab" class="panel wa-tool creator-only" role="tabpanel" aria-labelledby="waTabBtn" hidden>
       <div class="wa-form">
-        <h2>QR-code van je WhatsApp-nummer</h2>
+        <h2>QR-code naar je WhatsApp-nummer</h2>
         <p>Vul het telefoonnummer in waarop je via WhatsApp bereikbaar bent. Een Belgisch nummer mag gewoon met <strong>04</strong> beginnen.</p>
         <div class="field">
           <label for="waNumber">WhatsApp-nummer</label>
@@ -186,7 +196,7 @@ body.receiving .creator-only { display: none !important; }
         <p class="privacy"><span>🔒</span><span>Het nummer wordt alleen in deze browser verwerkt en nergens opgeslagen.</span></p>
       </div>
       <div id="waResult" class="wa-result" hidden>
-        <div id="waQrCode" class="qr-code" aria-label="QR-code van WhatsApp"></div>
+        <div id="waQrCode" class="qr-code" aria-label="QR-code naar WhatsApp"></div>
         <p>Wie deze code scant, opent een WhatsApp-chat naar dit nummer.</p>
         <a id="waLink" class="wa-link" target="_blank" rel="noopener">Link testen</a>
       </div>
@@ -196,7 +206,7 @@ body.receiving .creator-only { display: none !important; }
       <div class="receiver-icon">✓</div>
       <h2>Beveiligde contacten ontvangen</h2>
       <p id="receiverSummary"></p>
-      <div id="unlockBox" class="unlock-box"><label for="unlockCode">Overdrachtscode van de computer</label><input id="unlockCode" inputmode="text" autocomplete="one-time-code" autocapitalize="none" maxlength="8" placeholder="bv. 7k4m9pr2"><button id="unlockBtn" class="primary">Contacten ontsleutelen</button><p id="unlockError" class="unlock-error"></p></div>
+      <div id="unlockBox" class="unlock-box"><label for="unlockCode">Overdrachtscode van de computer</label><input id="unlockCode" inputmode="text" autocomplete="one-time-code" autocapitalize="none" maxlength="8" placeholder="Bijvoorbeeld 7k4m9p2r"><button id="unlockBtn" class="primary">Contacten ontsleutelen</button><p id="unlockError" class="unlock-error"></p></div>
       <button id="phoneOpenBtn" class="primary" hidden>Contactbestand downloaden</button>
       <p id="receiverHelp" class="receiver-help">Tik op de downloadknop. Open daarna het bestand en kies Contacten of Google Contacten.</p>
     </section>
@@ -1511,6 +1521,46 @@ root.QRCode=QRCode;root.QRErrorCorrectLevel=QRErrorCorrectLevel;})(window);</scr
     }
     return rows;
   }
+  function parsePastedReport(text) {
+    const lines = String(text || "").replace(/\r/g, "").split("\n").filter(line => line.trim());
+    if (!lines.length) throw new Error("Plak eerst de tabel uit Novigo.");
+    const headerIndex = lines.findIndex(line => /familienaam/i.test(line) && /voornaam/i.test(line) && (/\bgsm\b/i.test(line) || /tel\s*nr/i.test(line)));
+    if (headerIndex < 0) throw new Error("De kopregel met Familienaam, Voornaam en GSM/Tel nr werd niet gevonden.");
+    const usefulLines = lines.slice(headerIndex);
+
+    // Tabellen die rechtstreeks uit een webpagina worden gekopieerd zijn meestal
+    // door tabs gescheiden. Lege cellen blijven zo correct op hun plaats staan.
+    if (usefulLines[0].includes("\t")) {
+      return usefulLines.map(line => line.split("\t").map(clean));
+    }
+
+    // De rapportweergave van Novigo kan ook als een uitgelijnde teksttabel op het
+    // klembord terechtkomen. Gebruik dan de vaste startposities uit de kopregel.
+    const header = usefulLines[0];
+    const labels = [
+      ["familienaam", /familienaam/i],
+      ["voornaam", /voornaam/i],
+      ["cursistnummer", /cursistnummer/i],
+      ["telnr", /tel\s*nr/i],
+      ["gsm", /\bgsm\b/i],
+      ["email", /\bemail\b/i],
+      ["geboortedatum", /geboortedatum/i]
+    ].map(([name, pattern]) => ({ name, start: header.search(pattern) }))
+      .filter(column => column.start >= 0)
+      .sort((a, b) => a.start - b.start);
+    const wanted = ["familienaam", "voornaam", "telnr", "gsm"];
+    const rows = [wanted.map(name => name === "telnr" ? "Tel nr" : name[0].toUpperCase() + name.slice(1))];
+    for (const line of usefulLines.slice(1)) {
+      const values = {};
+      labels.forEach((column, index) => {
+        const end = labels[index + 1]?.start ?? line.length;
+        values[column.name] = clean(line.slice(column.start, end));
+      });
+      const row = wanted.map(name => values[name] || "");
+      if (row.some(Boolean)) rows.push(row);
+    }
+    return rows;
+  }
   function contactsFromRows(rows) {
     if (!rows.length) throw new Error("Het werkblad is leeg.");
     let headerRow = -1, headers = [];
@@ -1558,12 +1608,14 @@ root.QRCode=QRCode;root.QRErrorCorrectLevel=QRErrorCorrectLevel;})(window);</scr
       "END:VCARD"
     ].filter(Boolean).join("\r\n")).join("\r\n") + "\r\n";
   }
-  return { normalizePhone, parseXlsx, contactsFromRows, makeVcf };
+  return { normalizePhone, parseXlsx, parsePastedReport, contactsFromRows, makeVcf };
 });
 </script>
   <script>const core = window.ContactToolCore;
 const fileInput = document.querySelector("#excelFile");
 const drop = document.querySelector("#drop");
+const pasteData = document.querySelector("#pasteData");
+const pasteBtn = document.querySelector("#pasteBtn");
 const customPrefixInput = document.querySelector("#customPrefix");
 const courseLabel = document.querySelector("#courseLabel");
 const separatorInput = document.querySelector("#separator");
@@ -1661,33 +1713,10 @@ function randomTransferCode() {
   const random = crypto.getRandomValues(new Uint8Array(8));
   return Array.from(random, n => alphabet[n % alphabet.length]).join("");
 }
-	  function normalizeTransferCode(value) { return String(value || "").toUpperCase().replace(/[^2-9A-HJ-NP-Z]/g, "").slice(0, 8); }
+function normalizeTransferCode(value) { return String(value || "").toUpperCase().replace(/[^2-9A-HJ-NP-Z]/g, "").slice(0, 8); }
 async function deriveTransferKey(code, salt, usages) {
-  const normalizedCode = normalizeTransferCode(code);
-
-  const material = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(normalizedCode),
-    "PBKDF2",
-    false,
-    ["deriveKey"]
-  );
-
-  return crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      hash: "SHA-256",
-      salt,
-      iterations: 250000
-    },
-    material,
-    {
-      name: "AES-GCM",
-      length: 256
-    },
-    false,
-    usages
-  );
+  const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(normalizeTransferCode(code)), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", hash: "SHA-256", salt, iterations: 250000 }, material, { name: "AES-GCM", length: 256 }, false, usages);
 }
 async function encryptTransfer(bytes, code) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
@@ -1759,12 +1788,18 @@ async function loadFile(file) {
   try {
     setStatus("Excelbestand wordt gelezen…");
     const rows = await core.parseXlsx(await file.arrayBuffer(), window.JSZip);
+    loadRows(rows, file.name);
+  } catch (err) {
+    contacts = []; workspace.classList.remove("visible");
+    setStatus(err?.message || "Het bestand kon niet worden gelezen.", true);
+  }
+}
+function loadRows(rows, sourceDescription) {
+  try {
     const result = core.contactsFromRows(rows);
     detectedCourse = result.course;
     courseLabel.textContent = detectedCourse || "niet gevonden";
-    if (!detectedCourse) {
-      document.querySelector('input[name="prefixMode"][value="custom"]').checked = true;
-    }
+    if (!detectedCourse) document.querySelector('input[name="prefixMode"][value="custom"]').checked = true;
     contacts = result.contacts.map(c => {
       const normalized = core.normalizePhone(c.rawPhone);
       const item = { ...c, phone: normalized.value, valid: normalized.valid, message: normalized.message, selected: normalized.valid && !!(c.given || c.family), nameEdited: false };
@@ -1773,13 +1808,17 @@ async function loadFile(file) {
     });
     workspace.classList.add("visible");
     render();
-    setStatus(`${file.name} ingelezen. Controleer de contactnamen en vink bestaande contacten uit.`);
+    setStatus(`${sourceDescription} ingelezen. Controleer de contactnamen en vink bestaande contacten uit.`);
   } catch (err) {
     contacts = []; workspace.classList.remove("visible");
-    setStatus(err?.message || "Het bestand kon niet worden gelezen.", true);
+    setStatus(err?.message || "De lijst kon niet worden gelezen.", true);
   }
 }
 fileInput.addEventListener("change", e => loadFile(e.target.files[0]));
+pasteBtn.addEventListener("click", () => {
+  try { loadRows(core.parsePastedReport(pasteData.value), "Geplakte lijst"); }
+  catch (err) { contacts = []; workspace.classList.remove("visible"); setStatus(err?.message || "De geplakte lijst kon niet worden gelezen.", true); }
+});
 drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("drag"); });
 drop.addEventListener("dragleave", () => drop.classList.remove("drag"));
 drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("drag"); loadFile(e.dataTransfer.files[0]); });
@@ -1868,13 +1907,7 @@ waCreateBtn.addEventListener("click", createWhatsAppQr);
 waNumberInput.addEventListener("keydown", event => { if (event.key === "Enter") createWhatsAppQr(); });
 waNumberInput.addEventListener("input", () => { waStatus.textContent = ""; });
 
-unlockCodeInput.addEventListener("input", () => {
-  unlockCodeInput.value = unlockCodeInput.value
-    .replace(/[^2-9A-HJ-NP-Za-hj-np-z]/g, "")
-    .slice(0, 8);
-
-  unlockError.textContent = "";
-});
+unlockCodeInput.addEventListener("input", () => { unlockCodeInput.value = unlockCodeInput.value.toLowerCase().replace(/[^2-9a-hj-np-z]/g, "").slice(0, 8); unlockError.textContent = ""; });
 unlockCodeInput.addEventListener("keydown", e => { if (e.key === "Enter") unlockBtn.click(); });
 unlockBtn.addEventListener("click", async () => {
   const code = normalizeTransferCode(unlockCodeInput.value);
