@@ -30,7 +30,7 @@ h1 { font-size: clamp(1.55rem, 4vw, 2.25rem); margin: 0 0 3px; letter-spacing: -
 .tab { min-height: 40px; background: transparent; color: #405064; }
 .tab.active { background: white; color: var(--brand-dark); box-shadow: 0 2px 8px #1f29371a; }
 .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 8px 30px #1f29370d; overflow: hidden; }
-.setup { padding: 22px; display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 16px; align-items: end; }
+.setup { padding: 22px; display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 16px; align-items: start; }
 .field label, .drop-label { display: block; font-size: .9rem; font-weight: 750; margin-bottom: 7px; }
 .field input { width: 100%; min-height: 45px; border: 1px solid #bec8d3; border-radius: 10px; padding: 10px 12px; color: var(--ink); }
 .field .radio-line { display: flex; align-items: center; gap: 7px; font-weight: 500; margin: 7px 0; }
@@ -136,12 +136,13 @@ body.receiving .creator-only { display: none !important; }
     <section class="panel creator-only">
       <div class="setup">
         <div class="source-field">
-          <span class="drop-label">1. Voeg de cursistenlijst toe</span>
-          <label class="drop" id="drop"><span><strong>Klik om een Excelbestand te kiezen</strong><br>of sleep het bestand hierheen</span><input id="excelFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
-          <div class="source-divider"><span>of</span></div>
-          <label class="paste-label" for="pasteData">Kopieer de tabel in Novigo en plak ze hier</label>
+          <label class="paste-label" for="pasteData">1. Kopieer de tabel in Novigo en plak ze hier:</label>
           <textarea id="pasteData" rows="5" placeholder="Klik hier en druk op Ctrl+V"></textarea>
           <button id="pasteBtn" class="secondary paste-btn">Geplakte lijst inlezen</button>
+		    <div class="source-divider"><span>of</span></div>
+			<span class="drop-label">1. Voeg de cursistenlijst toe:</span>
+          <label class="drop" id="drop"><span><strong>Klik om een Excelbestand te kiezen</strong><br>of sleep het bestand hierheen</span><input id="excelFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+      
         </div>
         <div class="field prefix-field">
           <label>2. Wat komt vóór de naam?</label>
