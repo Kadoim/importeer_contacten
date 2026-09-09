@@ -30,7 +30,7 @@ h1 { font-size: clamp(1.55rem, 4vw, 2.25rem); margin: 0 0 3px; letter-spacing: -
 .tab { min-height: 40px; background: transparent; color: #405064; }
 .tab.active { background: white; color: var(--brand-dark); box-shadow: 0 2px 8px #1f29371a; }
 .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 8px 30px #1f29370d; overflow: hidden; }
-.setup { padding: 22px; display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 16px; align-items: start; }
+.setup { padding: 22px; display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 16px; align-items: end; }
 .field label, .drop-label { display: block; font-size: .9rem; font-weight: 750; margin-bottom: 7px; }
 .field input { width: 100%; min-height: 45px; border: 1px solid #bec8d3; border-radius: 10px; padding: 10px 12px; color: var(--ink); }
 .field .radio-line { display: flex; align-items: center; gap: 7px; font-weight: 500; margin: 7px 0; }
@@ -126,29 +126,29 @@ body.receiving .creator-only { display: none !important; }
 </head>
 <body>
   <main class="shell">
-    <header class="topbar"><div class="mark">W</div><div><h1>WhatsApp Business-hulpmiddelen</h1><p class="subtitle">Maak een contactbestand of een QR-code van je WhatsApp Business-nummer.</p></div></header>
+    <header class="topbar"><div class="mark">W</div><div><h1>WhatsApp Business-hulpmiddelen</h1><p class="subtitle">Maak een contactbestand of een QR-code naar je WhatsApp-nummer.</p></div></header>
     <nav class="tabs creator-only" role="tablist" aria-label="Kies een hulpmiddel">
       <button id="contactsTabBtn" class="tab active" role="tab" aria-selected="true" aria-controls="contactsTab" data-tab="contacts">Cursisten naar contacten</button>
-      <button id="waTabBtn" class="tab" role="tab" aria-selected="false" aria-controls="waTab" data-tab="wa">QR-code van je WhatsApp Business-nummer</button>
+      <button id="waTabBtn" class="tab" role="tab" aria-selected="false" aria-controls="waTab" data-tab="wa">QR-code naar WhatsApp</button>
     </nav>
 
     <div id="contactsTab" class="creator-only" role="tabpanel" aria-labelledby="contactsTabBtn">
     <section class="panel creator-only">
       <div class="setup">
         <div class="source-field">
-          
-          <label class="paste-label" for="pasteData">1. Kopieer de tabel in Novigo (selecteren + Ctrl C) en plak de gegevens hier:</label>
-          <textarea id="pasteData" rows="5" placeholder="Klik hier en plak met Ctrl V"></textarea>
-          <button id="pasteBtn" class="secondary paste-btn">Geplakte lijst inlezen</button>
-			<div class="source-divider"><span>of</span></div>
-			<span class="drop-label">1. Exporteer de tabel uit Novigo als xlsx en voeg de cursistenlijst toe:</span>
+          <span class="drop-label">1. Voeg de cursistenlijst toe</span>
           <label class="drop" id="drop"><span><strong>Klik om een Excelbestand te kiezen</strong><br>of sleep het bestand hierheen</span><input id="excelFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+          <div class="source-divider"><span>of</span></div>
+          <label class="paste-label" for="pasteData">Kopieer de tabel in Novigo en plak ze hier</label>
+          <textarea id="pasteData" rows="5" placeholder="Klik hier en druk op Ctrl+V"></textarea>
+          <button id="pasteBtn" class="secondary paste-btn">Geplakte lijst inlezen</button>
         </div>
         <div class="field prefix-field">
           <label>2. Wat komt vóór de naam?</label>
           <label class="radio-line"><input type="radio" name="prefixMode" value="course" checked> Cursusnummer: <strong id="courseLabel">wordt uit Excel gelezen</strong></label>
           <label class="radio-line"><input type="radio" name="prefixMode" value="custom"> Zelfgekozen korte naam</label>
           <input id="customPrefix" class="custom-prefix" placeholder="Bijvoorbeeld MA2 of Alfa 1">
+          <label class="radio-line"><input type="radio" name="prefixMode" value="none"> Geen voorvoegsel</label>
         </div>
         <div class="field"><label for="separator">Scheiding in contactnaam</label><input id="separator" value=" – " maxlength="8"></div>
         <div class="privacy"><span>🔒</span><span>Alleen naam en telefoonnummer worden gebruikt; rijksregisternummers, adressen en andere velden worden genegeerd. Bij overdracht via QR worden de contactgegevens versleuteld en niet op GitHub opgeslagen.</span></div>
@@ -186,8 +186,8 @@ body.receiving .creator-only { display: none !important; }
 
     <section id="waTab" class="panel wa-tool creator-only" role="tabpanel" aria-labelledby="waTabBtn" hidden>
       <div class="wa-form">
-        <h2>QR-code van je WhatsApp Business-nummer</h2>
-        <p>Vul het telefoonnummer in waarop je via WhatsApp Business bereikbaar bent. Een Belgisch nummer mag gewoon met <strong>04</strong> beginnen.</p>
+        <h2>QR-code naar je WhatsApp-nummer</h2>
+        <p>Vul het telefoonnummer in waarop je via WhatsApp bereikbaar bent. Een Belgisch nummer mag gewoon met <strong>04</strong> beginnen.</p>
         <div class="field">
           <label for="waNumber">WhatsApp-nummer</label>
           <input id="waNumber" type="tel" inputmode="tel" autocomplete="tel" placeholder="Bijvoorbeeld 0471 12 34 56">
@@ -197,7 +197,7 @@ body.receiving .creator-only { display: none !important; }
         <p class="privacy"><span>🔒</span><span>Het nummer wordt alleen in deze browser verwerkt en nergens opgeslagen.</span></p>
       </div>
       <div id="waResult" class="wa-result" hidden>
-        <div id="waQrCode" class="qr-code" aria-label="QR-code van je WhatsApp Business-nummer"></div>
+        <div id="waQrCode" class="qr-code" aria-label="QR-code naar WhatsApp"></div>
         <p>Wie deze code scant, opent een WhatsApp-chat naar dit nummer.</p>
         <a id="waLink" class="wa-link" target="_blank" rel="noopener">Link testen</a>
       </div>
@@ -1466,9 +1466,11 @@ root.QRCode=QRCode;root.QRErrorCorrectLevel=QRErrorCorrectLevel;})(window);</scr
     if (raw.startsWith("+")) return validateInternational("+" + digits);
     if (digits.startsWith(defaultCountry) && digits.length >= 10) return validateInternational("+" + digits);
     if (defaultCountry === "32") {
-      if (digits.startsWith("0")) digits = digits.slice(1);
-      else if (digits.length === 9 && digits.startsWith("4")) { /* Excel verloor de begin-0 */ }
-      else return { value: raw, valid: false, message: "Controleer landcode of nummer" };
+      // Alleen het ondubbelzinnige Belgische mobiele formaat automatisch
+      // omzetten. Een buitenlands lokaal nummer kan ook met 0 beginnen.
+      if (/^04\d{8}$/.test(digits)) digits = digits.slice(1);
+      else if (/^4\d{8}$/.test(digits)) { /* Excel verloor de begin-0 */ }
+      else return { value: raw, valid: false, message: "Geen duidelijk Belgisch nummer — voeg + en de landcode toe" };
       return validateInternational("+32" + digits);
     }
     return { value: raw, valid: false, message: "Controleer landcode of nummer" };
@@ -1662,7 +1664,9 @@ function vcfFilename(prefix) {
 }
 const selectedPrefix = () => {
   const mode = document.querySelector('input[name="prefixMode"]:checked').value;
-  return mode === "course" ? detectedCourse : customPrefixInput.value.trim();
+  if (mode === "course") return detectedCourse;
+  if (mode === "custom") return customPrefixInput.value.trim();
+  return "";
 };
 const generatedName = c => {
   const person = [c.given, c.family].filter(Boolean).join(" ");
@@ -1800,7 +1804,10 @@ function loadRows(rows, sourceDescription) {
     const result = core.contactsFromRows(rows);
     detectedCourse = result.course;
     courseLabel.textContent = detectedCourse || "niet gevonden";
-    if (!detectedCourse) document.querySelector('input[name="prefixMode"][value="custom"]').checked = true;
+    if (!detectedCourse) {
+      const fallbackMode = customPrefixInput.value.trim() ? "custom" : "none";
+      document.querySelector(`input[name="prefixMode"][value="${fallbackMode}"]`).checked = true;
+    }
     contacts = result.contacts.map(c => {
       const normalized = core.normalizePhone(c.rawPhone);
       const item = { ...c, phone: normalized.value, valid: normalized.valid, message: normalized.message, selected: normalized.valid && !!(c.given || c.family), nameEdited: false };
@@ -1843,7 +1850,6 @@ downloadBtn.addEventListener("click", () => {
   const selected = readyContacts();
   if (!selected.length) return setStatus("Selecteer minstens één geldig contact.", true);
   const prefix = selectedPrefix();
-  if (!prefix) return setStatus("Vul eerst een korte naam in of kies het cursusnummer.", true);
   // Geen UTF-8-BOM: Samsung accepteert die, maar Google Contacten op sommige
   // Motorola-toestellen weigert dan het volledige vCard-bestand.
   const filename = downloadVcf(selected, prefix);
@@ -1856,7 +1862,6 @@ qrBtn.addEventListener("click", async () => {
     const selected = readyContacts();
     const prefix = selectedPrefix();
     if (!selected.length) throw new Error("Selecteer minstens één geldig contact.");
-    if (!prefix) throw new Error("Vul eerst een korte naam in of kies het cursusnummer.");
     const payload = JSON.stringify({ v: 1, p: prefix, c: selected.map(c => [c.contactName, c.phone]) });
     const transferCode = randomTransferCode();
     const encoded = await encryptTransfer(await gzipText(payload), transferCode);
