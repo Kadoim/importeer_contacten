@@ -1683,9 +1683,15 @@ function makeVcfFile(items, prefix) {
   return new File([core.makeVcf(items, prefix)], vcfFilename(prefix), { type: "text/vcard;charset=utf-8" });
 }
 function supportsFileSharing(file) {
-  return typeof navigator.share === "function"
-    && typeof navigator.canShare === "function"
-    && navigator.canShare({ files: [file] });
+  try {
+    return typeof navigator.share === "function"
+      && typeof navigator.canShare === "function"
+      && navigator.canShare({ files: [file] });
+  } catch {
+    // Sommige iPhone-browsers bieden navigator.canShare aan, maar gooien een
+    // fout zodra een vCard-bestand wordt getest. Gebruik dan de downloadroute.
+    return false;
+  }
 }
 async function shareVcf(items, prefix) {
   const file = makeVcfFile(items, prefix);
@@ -1950,17 +1956,24 @@ unlockBtn.addEventListener("click", async () => {
     const compressed = await decryptTransfer(encryptedTransfer, code);
     receivedPayload = JSON.parse(await gunzipText(compressed));
     if (receivedPayload.v !== 1 || !Array.isArray(receivedPayload.c) || !receivedPayload.c.length) throw new Error();
-    document.querySelector("#receiverSummary").textContent = `${receivedPayload.c.length} contacten voor ${receivedPayload.p} staan klaar.`;
-    unlockBox.hidden = true;
-    phoneOpenBtn.hidden = false;
-    const previewFile = makeVcfFile(receivedPayload.c.map(([contactName, phone]) => ({ contactName, phone })), receivedPayload.p);
-    if (supportsFileSharing(previewFile)) {
-      phoneOpenBtn.textContent = "Contactbestand delen/openen";
-      receiverHelp.textContent = "Tik op de knop en bewaar het bestand in Bestanden. Open het daarna en kies 'Voeg alle contacten toe'.";
-    }
   } catch {
     unlockError.textContent = "De code klopt niet of de QR-code is beschadigd.";
+    return;
   } finally { unlockBtn.disabled = false; unlockBtn.textContent = "Contacten ontsleutelen"; }
+
+  // Alles hieronder gebeurt pas nadat de sleutel aantoonbaar correct was.
+  // Een probleem met het openen/delen mag daarom nooit als sleutelfout verschijnen.
+  document.querySelector("#receiverSummary").textContent = `${receivedPayload.c.length} contacten voor ${receivedPayload.p || "deze lijst"} staan klaar.`;
+  unlockBox.hidden = true;
+  phoneOpenBtn.hidden = false;
+  const previewFile = makeVcfFile(receivedPayload.c.map(([contactName, phone]) => ({ contactName, phone })), receivedPayload.p);
+  if (supportsFileSharing(previewFile)) {
+    phoneOpenBtn.textContent = "Contactbestand delen/openen";
+    receiverHelp.textContent = "Tik op de knop en bewaar het bestand in Bestanden. Open het daarna en kies 'Voeg alle contacten toe'.";
+  } else {
+    phoneOpenBtn.textContent = "Contactbestand downloaden";
+    receiverHelp.textContent = "Tik op de downloadknop. Open daarna het bestand en kies Contacten of Google Contacten.";
+  }
 });
 
 (async function openQrPayload() {
