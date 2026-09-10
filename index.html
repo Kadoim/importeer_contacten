@@ -1458,6 +1458,13 @@ root.QRCode=QRCode;root.QRErrorCorrectLevel=QRErrorCorrectLevel;})(window);</scr
 })(typeof self !== "undefined" ? self : this, function () {
   const clean = value => String(value ?? "").replace(/^'/, "").trim();
   const normHeader = value => clean(value).toLowerCase().replace(/[.\s_-]+/g, "");
+  function normalizeTransferCode(value) {
+    return String(value || "").toUpperCase().replace(/[^2-9A-HJ-NP-Z]/g, "").slice(0, 8);
+  }
+  function isAppleMobile(userAgent, platform, maxTouchPoints) {
+    return /iPhone|iPad|iPod/i.test(String(userAgent || ""))
+      || (platform === "MacIntel" && Number(maxTouchPoints) > 1);
+  }
   function normalizePhone(value, defaultCountry = "32") {
     let raw = clean(value);
     if (!raw) return { value: "", valid: false, message: "Geen telefoonnummer" };
@@ -1615,10 +1622,11 @@ root.QRCode=QRCode;root.QRErrorCorrectLevel=QRErrorCorrectLevel;})(window);</scr
       "END:VCARD"
     ].filter(Boolean).join("\r\n")).join("\r\n\r\n") + "\r\n";
   }
-  return { normalizePhone, parseXlsx, parsePastedReport, contactsFromRows, makeVcf };
+  return { normalizePhone, normalizeTransferCode, isAppleMobile, parseXlsx, parsePastedReport, contactsFromRows, makeVcf };
 });
 </script>
   <script>const core = window.ContactToolCore;
+const TOOL_VERSION = "20260910-1";
 const fileInput = document.querySelector("#excelFile");
 const drop = document.querySelector("#drop");
 const pasteData = document.querySelector("#pasteData");
@@ -1685,8 +1693,7 @@ function makeVcfFile(items, prefix) {
   return new File([core.makeVcf(items, prefix)], vcfFilename(prefix), { type: "text/vcard;charset=utf-8" });
 }
 function isAppleMobile() {
-  return /iPhone|iPad|iPod/i.test(navigator.userAgent)
-    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  return core.isAppleMobile(navigator.userAgent, navigator.platform, navigator.maxTouchPoints);
 }
 function openVcfOnIphone(items, prefix) {
   const file = makeVcfFile(items, prefix);
@@ -1735,7 +1742,7 @@ function randomTransferCode() {
   const random = crypto.getRandomValues(new Uint8Array(8));
   return Array.from(random, n => alphabet[n % alphabet.length]).join("");
 }
-function normalizeTransferCode(value) { return String(value || "").toUpperCase().replace(/[^2-9A-HJ-NP-Z]/g, "").slice(0, 8); }
+const normalizeTransferCode = core.normalizeTransferCode;
 async function deriveTransferKey(code, salt, usages) {
   const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(normalizeTransferCode(code)), "PBKDF2", false, ["deriveKey"]);
   return crypto.subtle.deriveKey({ name: "PBKDF2", hash: "SHA-256", salt, iterations: 250000 }, material, { name: "AES-GCM", length: 256 }, false, usages);
@@ -1882,7 +1889,15 @@ qrBtn.addEventListener("click", async () => {
     const payload = JSON.stringify({ v: 1, p: prefix, c: selected.map(c => [c.contactName, c.phone]) });
     const transferCode = randomTransferCode();
     const encoded = await encryptTransfer(await gzipText(payload), transferCode);
-    const url = `${location.href.split("#")[0]}#e=${encoded}`;
+    // Controleer de volledige versleutelingsketen voordat een sleutel wordt
+    // getoond. Zo kan nooit een QR-code vertrekken die deze pagina zelf niet kan lezen.
+    const selfCheck = await gunzipText(await decryptTransfer(encoded, transferCode));
+    if (selfCheck !== payload) throw new Error("De beveiligde overdracht kon niet worden gecontroleerd. Maak de QR-code opnieuw.");
+    // Een versienummer in de URL voorkomt dat de telefoon een oudere pagina uit
+    // zijn browsercache gebruikt dan de computer waarop de QR-code werd gemaakt.
+    const receiverUrl = new URL(location.href.split("#")[0]);
+    receiverUrl.searchParams.set("toolversie", TOOL_VERSION);
+    const url = `${receiverUrl.href}#e=${encoded}`;
     if (url.length > 2100) throw new Error("Deze klaslijst is uitzonderlijk groot voor één betrouwbare QR-code. Gebruik voor deze groep de gewone downloadknop.");
     renderQr(url);
     transferCodeEl.textContent = transferCode;
@@ -1946,14 +1961,31 @@ unlockBtn.addEventListener("click", async () => {
   const code = normalizeTransferCode(unlockCodeInput.value);
   if (code.length !== 8) { unlockError.textContent = "Vul de code van acht tekens volledig in."; return; }
   unlockBtn.disabled = true; unlockBtn.textContent = "Ontsleutelen…";
+  let compressed;
   try {
-    const compressed = await decryptTransfer(encryptedTransfer, code);
-    receivedPayload = JSON.parse(await gunzipText(compressed));
+    compressed = await decryptTransfer(encryptedTransfer, code);
+  } catch {
+    unlockError.textContent = "De overdrachtscode klopt niet. Controleer de acht tekens.";
+    unlockBtn.disabled = false; unlockBtn.textContent = "Contacten ontsleutelen";
+    return;
+  }
+  let payloadText;
+  try {
+    payloadText = await gunzipText(compressed);
+  } catch {
+    unlockError.textContent = "Deze browser kan de contactgegevens niet uitpakken. Open de QR-link in Safari of werk de browser bij.";
+    unlockBtn.disabled = false; unlockBtn.textContent = "Contacten ontsleutelen";
+    return;
+  }
+  try {
+    receivedPayload = JSON.parse(payloadText);
     if (receivedPayload.v !== 1 || !Array.isArray(receivedPayload.c) || !receivedPayload.c.length) throw new Error();
   } catch {
-    unlockError.textContent = "De code klopt niet of de QR-code is beschadigd.";
+    unlockError.textContent = "De QR-gegevens zijn beschadigd. Maak op de computer een nieuwe QR-code.";
+    unlockBtn.disabled = false; unlockBtn.textContent = "Contacten ontsleutelen";
     return;
-  } finally { unlockBtn.disabled = false; unlockBtn.textContent = "Contacten ontsleutelen"; }
+  }
+  unlockBtn.disabled = false; unlockBtn.textContent = "Contacten ontsleutelen";
 
   // Alles hieronder gebeurt pas nadat de sleutel aantoonbaar correct was.
   // Een probleem met het openen/delen mag daarom nooit als sleutelfout verschijnen.
