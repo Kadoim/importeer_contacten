@@ -1620,13 +1620,16 @@ root.QRCode=QRCode;root.QRErrorCorrectLevel=QRErrorCorrectLevel;})(window);</scr
       // behandelt. Het volgnummer houdt ook gelijke telefoonnummers apart.
       `UID:${String(c.phone || "contact").replace(/\D/g, "")}-${index + 1}@cursisten.local`,
       "END:VCARD"
-    ].filter(Boolean).join("\r\n")).join("\r\n\r\n") + "\r\n";
+    // Zet opeenvolgende vCards rechtstreeks achter elkaar. Een lege regel
+    // tussen END:VCARD en BEGIN:VCARD zorgt er op iOS voor dat soms alleen
+    // de eerste persoon wordt ingelezen.
+    ].filter(Boolean).join("\r\n")).join("\r\n") + "\r\n";
   }
   return { normalizePhone, normalizeTransferCode, isAppleMobile, parseXlsx, parsePastedReport, contactsFromRows, makeVcf };
 });
 </script>
   <script>const core = window.ContactToolCore;
-const TOOL_VERSION = "20260910-1";
+const TOOL_VERSION = "20260910-2";
 const fileInput = document.querySelector("#excelFile");
 const drop = document.querySelector("#drop");
 const pasteData = document.querySelector("#pasteData");
@@ -1995,7 +1998,7 @@ unlockBtn.addEventListener("click", async () => {
   if (isAppleMobile()) {
     phoneOpenBtn.textContent = "Contacten openen op iPhone";
     phoneDownloadBtn.hidden = false;
-    receiverHelp.textContent = `Deze ene vCard bevat alle ${receivedPayload.c.length} contacten. Tik op openen en kies daarna 'Voeg alle contacten toe'.`;
+    receiverHelp.textContent = `Dit bestand bevat alle ${receivedPayload.c.length} contacten. iPhone kan eerst slechts één persoon tonen. Tik dan op het deel-icoontje, kies Contacten en daarna 'Voeg alle contacten toe'.`;
   } else {
     phoneOpenBtn.textContent = "Contactbestand downloaden";
     phoneDownloadBtn.hidden = true;
