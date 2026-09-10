@@ -1629,7 +1629,7 @@ root.QRCode=QRCode;root.QRErrorCorrectLevel=QRErrorCorrectLevel;})(window);</scr
 });
 </script>
   <script>const core = window.ContactToolCore;
-const TOOL_VERSION = "20260910-2";
+const TOOL_VERSION = "20260910-3";
 const fileInput = document.querySelector("#excelFile");
 const drop = document.querySelector("#drop");
 const pasteData = document.querySelector("#pasteData");
@@ -1698,12 +1698,16 @@ function makeVcfFile(items, prefix) {
 function isAppleMobile() {
   return core.isAppleMobile(navigator.userAgent, navigator.platform, navigator.maxTouchPoints);
 }
-function openVcfOnIphone(items, prefix) {
+async function shareVcfOnIphone(items, prefix) {
   const file = makeVcfFile(items, prefix);
-  const url = URL.createObjectURL(file);
-  // Zonder download-attribuut behandelt iOS dit als een vCard om te openen,
-  // in plaats van als één bestand dat alleen gedeeld of bewaard kan worden.
-  window.location.assign(url);
+  if (typeof navigator.share !== "function") throw new Error("Delen wordt niet ondersteund");
+  if (typeof navigator.canShare === "function" && !navigator.canShare({ files: [file] })) {
+    throw new Error("Bestanden delen wordt niet ondersteund");
+  }
+  // Door het bestand via het iOS-deelmenu aan te bieden, blijft het één echt
+  // .vcf-bestand. Rechtstreeks openen vanuit een blob liet iOS alleen de
+  // eerste persoon uit de bundel zien.
+  await navigator.share({ files: [file], title: "Cursisten importeren" });
   return file.name;
 }
 function downloadVcf(items, prefix) {
@@ -1914,7 +1918,15 @@ phoneOpenBtn.addEventListener("click", async () => {
   if (!receivedPayload) return;
   const items = receivedPayload.c.map(([contactName, phone]) => ({ contactName, phone, family: "", given: "" }));
   if (isAppleMobile()) {
-    openVcfOnIphone(items, receivedPayload.p);
+    try {
+      const filename = await shareVcfOnIphone(items, receivedPayload.p);
+      receiverHelp.textContent = `${filename} is aangeboden. Kies 'Bewaar in Bestanden'. Open het bestand daarna vanuit de app Bestanden en kies via het deel-icoontje: Meer → Contacten → Voeg alle contacten toe.`;
+    } catch (err) {
+      // Annuleren is geen fout en mag niet onverwacht een download starten.
+      if (err && err.name === "AbortError") return;
+      const filename = downloadVcf(items, receivedPayload.p);
+      receiverHelp.textContent = `Delen lukte niet. ${filename} is daarom gedownload. Open het via Safari-downloads en bewaar het in Bestanden.`;
+    }
   } else {
     const filename = downloadVcf(items, receivedPayload.p);
     receiverHelp.textContent = `${filename} is gedownload. Open het via de downloads van je browser en kies Contacten of Google Contacten.`;
@@ -1996,9 +2008,10 @@ unlockBtn.addEventListener("click", async () => {
   unlockBox.hidden = true;
   phoneOpenBtn.hidden = false;
   if (isAppleMobile()) {
-    phoneOpenBtn.textContent = "Contacten openen op iPhone";
+    phoneOpenBtn.textContent = "Bewaar contactbestand op iPhone";
     phoneDownloadBtn.hidden = false;
-    receiverHelp.textContent = `Dit bestand bevat alle ${receivedPayload.c.length} contacten. iPhone kan eerst slechts één persoon tonen. Tik dan op het deel-icoontje, kies Contacten en daarna 'Voeg alle contacten toe'.`;
+    phoneDownloadBtn.textContent = "Gewoon downloaden";
+    receiverHelp.textContent = `Tik op de knop en kies 'Bewaar in Bestanden'. Open het bestand daarna vanuit Bestanden en kies via het deel-icoontje: Meer → Contacten → Voeg alle contacten toe. Het bestand bevat alle ${receivedPayload.c.length} contacten.`;
   } else {
     phoneOpenBtn.textContent = "Contactbestand downloaden";
     phoneDownloadBtn.hidden = true;
