@@ -209,6 +209,7 @@ body.receiving .creator-only { display: none !important; }
       <p id="receiverSummary"></p>
       <div id="unlockBox" class="unlock-box"><label for="unlockCode">Overdrachtscode van de computer</label><input id="unlockCode" inputmode="text" autocomplete="one-time-code" autocapitalize="none" maxlength="8" placeholder="Bijvoorbeeld 7k4m9p2r"><button id="unlockBtn" class="primary">Contacten ontsleutelen</button><p id="unlockError" class="unlock-error"></p></div>
       <button id="phoneOpenBtn" class="primary" hidden>Contactbestand downloaden</button>
+      <button id="phoneDownloadBtn" class="secondary" hidden>Download als reserve</button>
       <p id="receiverHelp" class="receiver-help">Tik op de downloadknop. Open daarna het bestand en kies Contacten of Google Contacten.</p>
     </section>
 
@@ -1637,6 +1638,7 @@ const qrPanel = document.querySelector("#qrPanel");
 const qrCode = document.querySelector("#qrCode");
 const receiver = document.querySelector("#receiver");
 const phoneOpenBtn = document.querySelector("#phoneOpenBtn");
+const phoneDownloadBtn = document.querySelector("#phoneDownloadBtn");
 const receiverHelp = document.querySelector("#receiverHelp");
 const transferCodeEl = document.querySelector("#transferCode");
 const unlockBox = document.querySelector("#unlockBox");
@@ -1682,23 +1684,16 @@ function readyContacts() {
 function makeVcfFile(items, prefix) {
   return new File([core.makeVcf(items, prefix)], vcfFilename(prefix), { type: "text/vcard;charset=utf-8" });
 }
-function supportsFileSharing(file) {
-  try {
-    return typeof navigator.share === "function"
-      && typeof navigator.canShare === "function"
-      && navigator.canShare({ files: [file] });
-  } catch {
-    // Sommige iPhone-browsers bieden navigator.canShare aan, maar gooien een
-    // fout zodra een vCard-bestand wordt getest. Gebruik dan de downloadroute.
-    return false;
-  }
+function isAppleMobile() {
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
-async function shareVcf(items, prefix) {
+function openVcfOnIphone(items, prefix) {
   const file = makeVcfFile(items, prefix);
-  await navigator.share({
-    files: [file],
-    title: "Contacten importeren"
-  });
+  const url = URL.createObjectURL(file);
+  // Zonder download-attribuut behandelt iOS dit als een vCard om te openen,
+  // in plaats van als één bestand dat alleen gedeeld of bewaard kan worden.
+  window.location.assign(url);
   return file.name;
 }
 function downloadVcf(items, prefix) {
@@ -1900,19 +1895,18 @@ qrBtn.addEventListener("click", async () => {
 phoneOpenBtn.addEventListener("click", async () => {
   if (!receivedPayload) return;
   const items = receivedPayload.c.map(([contactName, phone]) => ({ contactName, phone, family: "", given: "" }));
-  const file = makeVcfFile(items, receivedPayload.p);
-  try {
-    if (supportsFileSharing(file)) {
-      const filename = await shareVcf(items, receivedPayload.p);
-      receiverHelp.textContent = `${filename} is aangeboden. Kies op iPhone 'Bewaar in Bestanden', open het bestand en kies daarna 'Voeg alle contacten toe'.`;
-    } else {
-      const filename = downloadVcf(items, receivedPayload.p);
-      receiverHelp.textContent = `${filename} is gedownload. Open het via de downloads van je browser en kies Contacten of Google Contacten.`;
-    }
-  } catch (err) {
-    // Het sluiten van het deelvenster is geen fout: de gebruiker kan opnieuw tikken.
-    if (err?.name !== "AbortError") receiverHelp.textContent = "Het contactbestand kon niet worden geopend. Probeer de knop opnieuw.";
+  if (isAppleMobile()) {
+    openVcfOnIphone(items, receivedPayload.p);
+  } else {
+    const filename = downloadVcf(items, receivedPayload.p);
+    receiverHelp.textContent = `${filename} is gedownload. Open het via de downloads van je browser en kies Contacten of Google Contacten.`;
   }
+});
+phoneDownloadBtn.addEventListener("click", () => {
+  if (!receivedPayload) return;
+  const items = receivedPayload.c.map(([contactName, phone]) => ({ contactName, phone, family: "", given: "" }));
+  const filename = downloadVcf(items, receivedPayload.p);
+  receiverHelp.textContent = `${filename} is gedownload. Open het bestand vanuit Downloads of Bestanden.`;
 });
 
 document.querySelectorAll(".tab[data-tab]").forEach(button => button.addEventListener("click", () => {
@@ -1966,12 +1960,13 @@ unlockBtn.addEventListener("click", async () => {
   document.querySelector("#receiverSummary").textContent = `${receivedPayload.c.length} contacten voor ${receivedPayload.p || "deze lijst"} staan klaar.`;
   unlockBox.hidden = true;
   phoneOpenBtn.hidden = false;
-  const previewFile = makeVcfFile(receivedPayload.c.map(([contactName, phone]) => ({ contactName, phone })), receivedPayload.p);
-  if (supportsFileSharing(previewFile)) {
-    phoneOpenBtn.textContent = "Contactbestand delen/openen";
-    receiverHelp.textContent = "Tik op de knop en bewaar het bestand in Bestanden. Open het daarna en kies 'Voeg alle contacten toe'.";
+  if (isAppleMobile()) {
+    phoneOpenBtn.textContent = "Contacten openen op iPhone";
+    phoneDownloadBtn.hidden = false;
+    receiverHelp.textContent = `Deze ene vCard bevat alle ${receivedPayload.c.length} contacten. Tik op openen en kies daarna 'Voeg alle contacten toe'.`;
   } else {
     phoneOpenBtn.textContent = "Contactbestand downloaden";
+    phoneDownloadBtn.hidden = true;
     receiverHelp.textContent = "Tik op de downloadknop. Open daarna het bestand en kies Contacten of Google Contacten.";
   }
 });
