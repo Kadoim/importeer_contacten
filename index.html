@@ -136,19 +136,18 @@ body.receiving .creator-only { display: none !important; }
     <section class="panel creator-only">
       <div class="setup">
         <div class="source-field">
-          <label class="paste-label" for="pasteData">1. Kopieer de tabel uit Novigo (Ctrl C) en plak ze hier:</label>
+          <label class="paste-label" for="pasteData">1. Kopieer de tabel in Novigo (Ctrl C) en plak ze hier:</label>
           <textarea id="pasteData" rows="5" placeholder="Klik hier en druk op Ctrl V"></textarea>
           <button id="pasteBtn" class="secondary paste-btn">Geplakte lijst inlezen</button>
-		    <div class="source-divider"><span>of</span></div>
-			<span class="drop-label">1. Voeg de cursistenlijst toe:</span>
+          <div class="source-divider"><span>of</span></div>
+          <span class="drop-label">1. Voeg de cursistenlijst toe:</span>
           <label class="drop" id="drop"><span><strong>Klik om een Excelbestand te kiezen</strong><br>of sleep het bestand hierheen</span><input id="excelFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
-      
         </div>
         <div class="field prefix-field">
           <label>2. Wat komt vóór de naam?</label>
           <label class="radio-line"><input type="radio" name="prefixMode" value="course" checked> Cursusnummer: <strong id="courseLabel">wordt uit Excel gelezen</strong></label>
           <label class="radio-line"><input type="radio" name="prefixMode" value="custom"> Zelfgekozen korte naam</label>
-          <input id="customPrefix" class="custom-prefix" placeholder="Bijvoorbeeld WS2 av of TLS Heusden di nm">
+          <input id="customPrefix" class="custom-prefix" placeholder="Bijvoorbeeld MA2 of Alfa 1">
           <label class="radio-line"><input type="radio" name="prefixMode" value="none"> Geen voorvoegsel</label>
         </div>
         <div class="field"><label for="separator">Scheiding in contactnaam</label><input id="separator" value=" – " maxlength="8"></div>
@@ -1602,15 +1601,18 @@ root.QRCode=QRCode;root.QRErrorCorrectLevel=QRErrorCorrectLevel;})(window);</scr
   }
   function vcfEscape(value) { return clean(value).replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;"); }
   function makeVcf(contacts, group) {
-    return contacts.map(c => [
-      "BEGIN:VCARD", "VERSION:3.0",
+    return contacts.map((c, index) => [
+      "BEGIN:VCARD", "VERSION:3.0", "PRODID:-//Cursisten naar contacten//NL",
       // WhatsApp Business doorzoekt op Android vooral de gestructureerde naam.
       // Zet daarom de volledige, gekozen contactnaam ook in het voornaamveld.
-      `N:;${vcfEscape(c.contactName)};;;`,
-      `FN:${vcfEscape(c.contactName)}`,
+      `N;CHARSET=UTF-8:;${vcfEscape(c.contactName)};;;`,
+      `FN;CHARSET=UTF-8:${vcfEscape(c.contactName)}`,
       `TEL;TYPE=CELL:${c.phone}`,
+      // Een unieke UID voorkomt dat iOS opeenvolgende kaarten als één contact
+      // behandelt. Het volgnummer houdt ook gelijke telefoonnummers apart.
+      `UID:${String(c.phone || "contact").replace(/\D/g, "")}-${index + 1}@cursisten.local`,
       "END:VCARD"
-    ].filter(Boolean).join("\r\n")).join("\r\n") + "\r\n";
+    ].filter(Boolean).join("\r\n")).join("\r\n\r\n") + "\r\n";
   }
   return { normalizePhone, parseXlsx, parsePastedReport, contactsFromRows, makeVcf };
 });
@@ -1679,6 +1681,19 @@ function readyContacts() {
 }
 function makeVcfFile(items, prefix) {
   return new File([core.makeVcf(items, prefix)], vcfFilename(prefix), { type: "text/vcard;charset=utf-8" });
+}
+function supportsFileSharing(file) {
+  return typeof navigator.share === "function"
+    && typeof navigator.canShare === "function"
+    && navigator.canShare({ files: [file] });
+}
+async function shareVcf(items, prefix) {
+  const file = makeVcfFile(items, prefix);
+  await navigator.share({
+    files: [file],
+    title: "Contacten importeren"
+  });
+  return file.name;
 }
 function downloadVcf(items, prefix) {
   const file = makeVcfFile(items, prefix);
@@ -1876,11 +1891,22 @@ qrBtn.addEventListener("click", async () => {
   } catch (err) { setStatus(err.message || "De QR-code kon niet worden gemaakt.", true); }
 });
 
-phoneOpenBtn.addEventListener("click", () => {
+phoneOpenBtn.addEventListener("click", async () => {
   if (!receivedPayload) return;
   const items = receivedPayload.c.map(([contactName, phone]) => ({ contactName, phone, family: "", given: "" }));
-  const filename = downloadVcf(items, receivedPayload.p);
-  receiverHelp.textContent = `${filename} is gedownload. Open het via de downloads van je browser en kies Contacten of Google Contacten.`;
+  const file = makeVcfFile(items, receivedPayload.p);
+  try {
+    if (supportsFileSharing(file)) {
+      const filename = await shareVcf(items, receivedPayload.p);
+      receiverHelp.textContent = `${filename} is aangeboden. Kies op iPhone 'Bewaar in Bestanden', open het bestand en kies daarna 'Voeg alle contacten toe'.`;
+    } else {
+      const filename = downloadVcf(items, receivedPayload.p);
+      receiverHelp.textContent = `${filename} is gedownload. Open het via de downloads van je browser en kies Contacten of Google Contacten.`;
+    }
+  } catch (err) {
+    // Het sluiten van het deelvenster is geen fout: de gebruiker kan opnieuw tikken.
+    if (err?.name !== "AbortError") receiverHelp.textContent = "Het contactbestand kon niet worden geopend. Probeer de knop opnieuw.";
+  }
 });
 
 document.querySelectorAll(".tab[data-tab]").forEach(button => button.addEventListener("click", () => {
@@ -1927,6 +1953,11 @@ unlockBtn.addEventListener("click", async () => {
     document.querySelector("#receiverSummary").textContent = `${receivedPayload.c.length} contacten voor ${receivedPayload.p} staan klaar.`;
     unlockBox.hidden = true;
     phoneOpenBtn.hidden = false;
+    const previewFile = makeVcfFile(receivedPayload.c.map(([contactName, phone]) => ({ contactName, phone })), receivedPayload.p);
+    if (supportsFileSharing(previewFile)) {
+      phoneOpenBtn.textContent = "Contactbestand delen/openen";
+      receiverHelp.textContent = "Tik op de knop en bewaar het bestand in Bestanden. Open het daarna en kies 'Voeg alle contacten toe'.";
+    }
   } catch {
     unlockError.textContent = "De code klopt niet of de QR-code is beschadigd.";
   } finally { unlockBtn.disabled = false; unlockBtn.textContent = "Contacten ontsleutelen"; }
